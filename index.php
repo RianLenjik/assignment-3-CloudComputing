@@ -14,6 +14,7 @@
 <?php
 session_start();
 include "navbar.php";
+include "s3bucket.php";
 ?>
 
 <body>
@@ -62,6 +63,10 @@ include "navbar.php";
     $result = $dynamodb->scan($params);
 
     ?>
+    <form action="verification.php" method="POST">
+        <input type="submit" name="verify" value="Verify Email">
+    </form>
+
     <div class="wrapper">
         <div class="view main">
             <div class="view_wrap grid-view" style="display: block;">
@@ -69,13 +74,19 @@ include "navbar.php";
                 foreach ($result['Items'] as $i) {
                     $film = $marshaler->unmarshalItem($i);
                     if ($film['year'] < 2022) {
+                        $poster = "posters/" . preg_replace("/\s+/", '', $film['title']) . ".jpg";
+                        $cmd = $s3Client->getCommand('GetObject', [
+                            'Bucket' => 'a3-s3786798',
+                            'Key' => $poster
+                        ]);
+
+                        $request = $s3Client->createPresignedRequest($cmd, '+20 minutes');
+                        $presignedUrl = (string)$request->getUri();
                 ?>
                         <div class="view_item">
                             <form action="index.php" method="POST">
                                 <div class="vi_left">
-                                    <input type="image" name="movie[<?php echo preg_replace("/\s+/", '', $film['title']); ?>]" type="submit" src="posters/AE.jpg" style="width:170px;height:340;">
-                                    <!-- <img id=<?php //echo preg_replace("/\s+/", '', $film['title']); 
-                                                    ?> src="posters/AE.jpg" style="width:170px;height:340;"> -->
+                                    <input type="image" name="movie[<?php echo preg_replace("/\s+/", '', $film['title']); ?>]" type="submit" src="<?php echo $presignedUrl ?>" style="width:170px;height:340;">
                                 </div>
                             </form>
                             <div class="vi_right">
@@ -85,6 +96,7 @@ include "navbar.php";
                 <?php
                     }
                 }
+
                 ?>
             </div>
         </div>
@@ -93,6 +105,7 @@ include "navbar.php";
     <script src="scripts.js"></script>
 
     <?php
+
     if (isset($_POST['movie'])) {
         foreach (array_keys($_POST['movie']) as $value) {
             @$_SESSION['title'] = $value;

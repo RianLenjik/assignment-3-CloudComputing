@@ -12,6 +12,7 @@
 </head>
 <?php
 include "navbar.php";
+include "s3bucket.php";
 ?>
 
 <body>
@@ -49,12 +50,21 @@ include "navbar.php";
                 foreach ($result['Items'] as $i) {
                     $film = $marshaler->unmarshalItem($i);
                     if ($film['year'] > 2021) {
+                        $poster = "posters/" . preg_replace("/\s+/", '', $film['title']) . ".jpg";
+                        $cmd = $s3Client->getCommand('GetObject', [
+                            'Bucket' => 'a3-s3786798',
+                            'Key' => $poster
+                        ]);
+
+                        $request = $s3Client->createPresignedRequest($cmd, '+20 minutes');
+                        $presignedUrl = (string)$request->getUri();
                 ?>
                         <div class="view_item">
-
-                            <div class="vi_left">
-                                <img src="posters/AE.jpg" style="width:170px;height:340;">
-                            </div>
+                            <form action="comingsoon.php" method="POST">
+                                <div class="vi_left">
+                                    <input type="image" name="movie[<?php echo preg_replace("/\s+/", '', $film['title']); ?>]" type="submit" src="<?php echo $presignedUrl ?>" style="width:170px;height:340;">
+                                </div>
+                            </form>
                             <div class="vi_right">
                                 <p class="title"><?php echo $film['title']; ?></p>
                             </div>
@@ -68,6 +78,16 @@ include "navbar.php";
 
     </div>
     <script src="scripts.js"></script>
+    <?php
+
+    if (isset($_POST['movie'])) {
+        foreach (array_keys($_POST['movie']) as $value) {
+            $_SESSION['title'] = $value;
+            echo "<script type='text/javascript'>window.location.href = 'movie.php';</script>";
+        }
+    }
+
+    ?>
 </body>
 
 </html>

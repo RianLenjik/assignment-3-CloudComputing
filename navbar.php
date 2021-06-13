@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 
-<?php include "connect.php"; ?>
+<?php
+include "connect.php";
+?>
 
 <head>
     <meta charset="UTF-8">
@@ -59,11 +61,8 @@
     <div class="navbar">
         <ul>
             <li><a href="index.php">Now Showing</a></li>
-            <li><a href="#">Theaters</a></li>
             <li><a href="comingsoon.php">Coming Soon</a></li>
-            <li><a href="#">Playing at ....</a></li>
-            <li><a href="#">About Us</a></li>
-            <li><a href="#">Logout</a></li>
+            <li><a href="login.php">Login</a></li>
         </ul>
     </div>
 </body>

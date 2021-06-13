@@ -10,12 +10,14 @@
 <?php
 session_start();
 include "navbar.php";
+include "s3bucket.php";
 
 require 'vendor/autoload.php';
 date_default_timezone_set('Australia/Melbourne');
 
 use Aws\DynamoDb\Exception\DynamoDbException;
 use Aws\DynamoDb\Marshaler;
+use Aws\S3\Exception\S3Exception;
 
 $sdk = new Aws\Sdk([
     'region' => 'us-east-1',
@@ -34,12 +36,20 @@ $result = $dynamodb->scan($params);
 foreach ($result['Items'] as $i) {
     $film = $marshaler->unmarshalItem($i);
     if (preg_replace("/\s+/", '', $film['title']) == $_SESSION['title']) {
+        $poster = "posters/" . preg_replace("/\s+/", '', $film['title']) . ".jpg";
+        $cmd = $s3Client->getCommand('GetObject', [
+            'Bucket' => 'a3-s3786798',
+            'Key' => $poster
+        ]);
+
+        $request = $s3Client->createPresignedRequest($cmd, '+20 minutes');
+        $presignedUrl = (string)$request->getUri();
 ?>
 
         <body>
             <div style="margin-bottom: 0px; min-height: 200px; padding: 10px;">
                 <h2><?php echo $film['title'] ?></h2>
-                <img id='AE' src="posters/AE.jpg" style="max-height:280px">
+                <img id='AE' src="<?php echo $presignedUrl ?>" style="max-height:280px">
                 <div class="extra-wrap1">
 
                     <br><span class="data"><strong>Release date: </strong><?php echo $film['release_date'] ?></span><br>
